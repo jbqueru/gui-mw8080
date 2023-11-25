@@ -1,0 +1,410 @@
+; Copyright 2023 Jean-Baptiste "JBQ" "Djaybee" Queru
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+; 
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+
+
+
+; 80 columns, hard 8-character tabs
+
+
+
+; ###########################################################################
+; ###########################################################################
+; ###                                                                     ###
+; ###                                                                     ###
+; ###                               Invadows                              ###
+; ###                                                                     ###
+; ###   A windowing system running on Williams 8080 hardware, as used in  ###
+; ###       Gun Fight, Space Invaders, and quite a few other games.       ###
+; ###                                                                     ###
+; ###                                                                     ###
+; ###########################################################################
+; ###########################################################################
+
+
+
+; ####################################
+; ####################################
+; ###                              ###
+; ###                              ###
+; ###     HARDWARE ENVIRONMENT     ###
+; ###                              ###
+; ###                              ###
+; ####################################
+; ####################################
+
+; This software is designed on the hardware board that was built by
+; Midway for games from Gun Fight (1975) to Space Invaders II (1980).
+;
+; 8080 processor, starting execution at address $0000.
+; 8kB of ROM from $0000 to $1FFF
+; 8kB of RAM from $2000 to $3FFF
+;     including 7kB framebuffer starting at $2400, 256x224 1-bit.
+;     Rotated 90 degrees CCW seen from viewer.
+;     MSB to the "left" (bottom after rotation)
+;
+; I/O ports for Space Invaders (including cocktail version)
+;
+; Inputs
+;
+; port 1 input
+;   0 - coin, debounced (returns 1 once per coin, resets after read)
+;   1 - 2P start
+;   2 - 1P start
+;   4 - 1P fire
+;   5 - 1P left
+;   6 - 1P right
+;
+; port 2 input
+;   0,1 - DIP switches (number of ships from 3 to 6)
+;   2 - DIP switch (0=hard, 1=easy)
+;   4 - 2P fire
+;   5 - 2P left
+;   6 - 2P right
+;   7 - DIP switch (show/hide coin info)
+;
+; Sounds
+;
+; port 3 output
+;   0 - saucer (doesn't automatically stop)
+;   1 - shot
+;   2 - player hit
+;   3 - invader hit
+;   4 - extended play
+;
+; port 4 output
+;   0 - invader motion A
+;   1 - invader motion B
+;   2 - invader motion C
+;   3 - invader motion D
+;   4 - saucer hit
+;   5 - amplifier on/off
+;
+; Shifter
+;
+; port 2 output: number of bits to shift
+; port 4 output: data stream
+; port 3 input: data stream from port 4 shifted by number of bits
+;               specifed in port 2
+;
+; Watchdog
+;
+; port 6 output: in theory, any read or write will reset the watchdog.
+;                However, the 8bitworkshop emulator only resets on writes.
+
+
+; #############################
+; #############################
+; ###                       ###
+; ###                       ###
+; ###     MEMORY LAYOUT     ###
+; ###                       ###
+; ###                       ###
+; #############################
+; #############################
+
+; The stack lives at the top of the usable RAM, keeping 2 bytes at the top
+; to save SP when using it for other purposes.
+STACK_TOP	.equ	$23FE
+STACK_SAVE	.equ	$23FE
+FRAME_BUFFER	.equ	$2400
+
+
+; ####################
+; ####################
+; ###              ###
+; ###              ###
+; ###     CODE     ###
+; ###              ###
+; ###              ###
+; ####################
+; ####################
+
+; ############
+; ##        ##
+; ##  INIT  ##
+; ##        ##
+; ############
+
+	.8080			; Beware: Space Invaders uses a true 8080
+				; but zmac and 8bitworkshop support full Z80
+				; such that there's a risk that this code
+				; might not work on actual hardware (or on
+				; a strict 8080 emulator)
+
+	.org	0		; Execution starts at address 0
+
+	DI			; Let's not use interrupts (yet)
+
+	LXI	SP,STACK_TOP	; Set up the stack at the top of the user RAM
+
+; ############
+; ##        ##
+; ##  TEST  ##
+; ##        ##
+; ############
+
+	CALL	bg		; Fill background
+
+	MVI	B,0
+	MVI	C,223
+	MVI	D,0
+	CALL	hwhite
+
+	MVI	B,17
+	MVI	C,84
+	MVI	D,2
+	CALL	hblack
+
+forever:
+	OUT	6		; Tickle watchdog
+	JMP	forever		; Main loop
+
+; #################################
+; #################################
+; ###                           ###
+; ###                           ###
+; ###     GRAPHICS ROUTINES     ###
+; ###                           ###
+; ###                           ###
+; #################################
+; #################################
+
+
+; ##########################
+; ##                      ##
+; ##  BACKGROUND STIPPLE  ##
+; ##                      ##
+; ##########################
+
+; Inputs: none
+; Outputs: none
+; Modifies: ABCHLF
+
+bg:
+	MVI	C,112		; 112 pairs of columns = 224 columns
+
+	LXI	H,FRAME_BUFFER	; Start address of framebuffer
+bgcol:
+
+	MVI	A,$55		; Pattern for even columns
+	MVI	B,32		; 32 bytes per column
+bgl32a:
+	MOV	M,A
+	INX	H
+	DCR	B
+	JNZ	bgl32a
+
+	MVI	A,$AA		; Pattern for odd columns
+	MVI	B,32		; 32 bytes per column
+bgl32b:
+	MOV	M,A
+	INX	H
+	DCR	B
+	JNZ	bgl32b
+
+	DCR	C
+	JNZ	bgcol
+
+	RET
+
+; #######################
+; ##                   ##
+; ##  RECTANGLE WHITE  ##
+; ##                   ##
+; #######################
+
+; Inputs: B: xleft
+;         C: xright
+;         D: ytop
+;         E: ybottom
+
+; Modifies: ABCDEHLF
+
+rwhite:
+	PUSH	B
+	PUSH	D
+
+; Compute address of bottom-left corner
+
+; Multiply x by 32
+	MOV	L,B
+	MVI	H,0
+
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+
+; Add base address
+	LXI	B,$2400
+	DAD	B
+
+; Divide y by 8
+	MOV	A,E
+	CMA
+	RRC
+	RRC
+	RRC
+	ANI	31
+
+; Add to the base address
+	ADD	L
+	MOV	L,A
+
+	MOV	A,E
+	CMA
+	ANI	7
+
+	MVI	A,$FF
+	ADD	A
+	ADD	A
+	ADD	A
+	ADD	A
+
+	ORA	M
+	MOV	M,A
+
+	POP	D
+	POP	B
+
+	RET
+
+; #############################
+; ##                         ##
+; ##  HORIZONTAL LINE WHITE  ##
+; ##                         ##
+; #############################
+
+; Inputs: B: xleft
+;         C: xright
+;         D: y
+
+hwhite:
+; compute number of columns, store in E
+	MOV	A,C
+	SUB	B
+	INR	A
+	MOV	E,A	; E = C - B + 1
+
+; address of the first column: HL = FRAME_BUFFER + B * 32
+	MOV	L,B
+	MVI	H,0
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	LXI	B,FRAME_BUFFER
+	DAD	B
+
+; address of first pixel: HL += (255 - D) >> 3
+	MOV	A,D
+	CMA
+	RRC
+	RRC
+	RRC
+	ANI	31
+	ADD	L
+	MOV	L,A
+
+; pattern of pixels: A = $80 >> (D & 7)
+	MOV	A,D
+	ANI	7
+	MOV	B,A
+	MVI	A,10000000b
+	JZ	hwshiftdone
+hwshift:
+	RRC
+	DCR	B
+	JNZ	hwshift
+hwshiftdone:
+	MOV	D,A
+
+; write the actual pixels
+	LXI	B,32
+hwpixloop:
+	MOV	A,D
+	ORA	M
+	MOV	M,A
+	DAD	B
+	DCR	E
+	JNZ	hwpixloop
+
+	RET
+
+; #############################
+; ##                         ##
+; ##  HORIZONTAL LINE BLACK  ##
+; ##                         ##
+; #############################
+
+; Inputs: B: xleft
+;         C: xright
+;         D: y
+
+hblack:
+; compute number of columns, store in E
+	MOV	A,C
+	SUB	B
+	INR	A
+	MOV	E,A	; E = C - B + 1
+
+; address of the first column: HL = FRAME_BUFFER + B * 32
+	MOV	L,B
+	MVI	H,0
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	LXI	B,FRAME_BUFFER
+	DAD	B
+
+; address of first pixel: HL += (255 - D) >> 3
+	MOV	A,D
+	CMA
+	RRC
+	RRC
+	RRC
+	ANI	31
+	ADD	L
+	MOV	L,A
+
+; pattern of pixels: A = $80 >> (D & 7)
+	MOV	A,D
+	ANI	7
+	MOV	B,A
+	MVI	A,01111111b
+	JZ	hbshiftdone
+hbshift:
+	RRC
+	DCR	B
+	JNZ	hbshift
+hbshiftdone:
+	MOV	D,A
+
+; write the actual pixels
+	LXI	B,32
+hbpixloop:
+	MOV	A,D
+	ANA	M
+	MOV	M,A
+	DAD	B
+	DCR	E
+	JNZ	hbpixloop
+
+	RET
+
+; 345678901234567890123456789012345678901234567890123456789012345678901234567
