@@ -1,5 +1,3 @@
-; SPDX-License-Identifier: Apache-2.0
-;
 ; Copyright 2023 Jean-Baptiste "JBQ" "Djaybee" Queru
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,18 +18,18 @@
 
 
 
-; ###########################################################################
-; ###########################################################################
-; ###                                                                     ###
-; ###                                                                     ###
-; ###                               Invadows                              ###
-; ###                                                                     ###
-; ###   A windowing system running on Williams 8080 hardware, as used in  ###
-; ###       Gun Fight, Space Invaders, and quite a few other games.       ###
-; ###                                                                     ###
-; ###                                                                     ###
-; ###########################################################################
-; ###########################################################################
+; ##############################################################################
+; ##############################################################################
+; ###                                                                        ###
+; ###                                                                        ###
+; ###                                 Invadows                               ###
+; ###                                                                        ###
+; ###    A windowing system running on Williams 8080 hardware, as used in    ###
+; ###         Gun Fight, Space Invaders, and quite a few other games.        ###
+; ###                                                                        ###
+; ###                                                                        ###
+; ##############################################################################
+; ##############################################################################
 
 
 
@@ -53,14 +51,14 @@
 ; 8kB of RAM from $2000 to $3FFF
 ;     including 7kB framebuffer starting at $2400, 256x224 1-bit.
 ;     Rotated 90 degrees CCW seen from viewer.
-;     MSB to the "left" (bottom after rotation)
+;     MSB to the "right" (top after rotation) (counter-intuitive!!!)
 ;
 ; I/O ports for Space Invaders (including cocktail version)
 ;
 ; Inputs
 ;
 ; port 1 input
-;   0 - coin, debounced (returns 1 once per coin, resets after read)
+;   0 - coin, debounced? (returns 1 once per coin, resets after read)
 ;   1 - 2P start
 ;   2 - 1P start
 ;   4 - 1P fire
@@ -115,10 +113,7 @@
 ; #############################
 ; #############################
 
-; The stack lives at the top of the usable RAM, keeping 2 bytes at the top
-; to save SP when using it for other purposes.
-STACK_TOP	.equ	$23FE
-STACK_SAVE	.equ	$23FE
+STACK_TOP	.equ	$2400
 FRAME_BUFFER	.equ	$2400
 
 
@@ -143,6 +138,7 @@ FRAME_BUFFER	.equ	$2400
 				; such that there's a risk that this code
 				; might not work on actual hardware (or on
 				; a strict 8080 emulator)
+                                ; This also means that the few areas
 
 	.org	0		; Execution starts at address 0
 
@@ -193,30 +189,26 @@ forever:
 ; Outputs: none
 ; Modifies: ABCHLF
 
+; Possible speed optimization: unroll loop slightly (e.g. 2x, 4x).
+
 bg:
-	MVI	C,112		; 112 pairs of columns = 224 columns
+	MVI	C,224		; 224 columns per screen
 
 	LXI	H,FRAME_BUFFER	; Start address of framebuffer
+	MVI	A,$55		; Pattern
 bgcol:
 
-	MVI	A,$55		; Pattern for even columns
 	MVI	B,32		; 32 bytes per column
-bgl32a:
-	MOV	M,A
-	INX	H
-	DCR	B
-	JNZ	bgl32a
+bgbyte:
+	MOV	M,A		; Write byte through HL
+	INX	H		; Increment HL pointer
+	DCR	B		; Decrement loop counter
+	JNZ	bgbyte		; Loop
 
-	MVI	A,$AA		; Pattern for odd columns
-	MVI	B,32		; 32 bytes per column
-bgl32b:
-	MOV	M,A
-	INX	H
-	DCR	B
-	JNZ	bgl32b
+	CMA			; Flip pattern bits
 
-	DCR	C
-	JNZ	bgcol
+	DCR	C		; Decrement loop counter
+	JNZ	bgcol		; Loop
 
 	RET
 
@@ -409,4 +401,4 @@ hbpixloop:
 
 	RET
 
-; 345678901234567890123456789012345678901234567890123456789012345678901234567
+; 345678901234567890123456789012345678901234567890123456789012345678901234567890
