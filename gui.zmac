@@ -159,10 +159,11 @@ FRAME_BUFFER	.equ	$2400
 	MVI	D,0
 	CALL	hwhite
 
-	MVI	B,17
-	MVI	C,84
-	MVI	D,2
-	CALL	hblack
+	MVI	B,100
+	MVI	C,200
+	MVI	D,100
+	MVI	E,200
+	CALL	rwhite
 
 forever:
 	OUT	6		; Tickle watchdog
@@ -187,7 +188,7 @@ forever:
 
 ; Inputs: none
 ; Outputs: none
-; Modifies: ABCHLF
+; Modifies: BCHLFA
 
 ; Possible speed optimization: unroll loop slightly (e.g. 2x, 4x).
 
@@ -212,68 +213,6 @@ bgbyte:
 
 	RET
 
-; #######################
-; ##                   ##
-; ##  RECTANGLE WHITE  ##
-; ##                   ##
-; #######################
-
-; Inputs: B: xleft
-;         C: xright
-;         D: ytop
-;         E: ybottom
-
-; Modifies: ABCDEHLF
-
-rwhite:
-	PUSH	B
-	PUSH	D
-
-; Compute address of bottom-left corner
-
-; Multiply x by 32
-	MOV	L,B
-	MVI	H,0
-
-	DAD	H
-	DAD	H
-	DAD	H
-	DAD	H
-	DAD	H
-
-; Add base address
-	LXI	B,$2400
-	DAD	B
-
-; Divide y by 8
-	MOV	A,E
-	CMA
-	RRC
-	RRC
-	RRC
-	ANI	31
-
-; Add to the base address
-	ADD	L
-	MOV	L,A
-
-	MOV	A,E
-	CMA
-	ANI	7
-
-	MVI	A,$FF
-	ADD	A
-	ADD	A
-	ADD	A
-	ADD	A
-
-	ORA	M
-	MOV	M,A
-
-	POP	D
-	POP	B
-
-	RET
 
 ; #############################
 ; ##                         ##
@@ -284,6 +223,9 @@ rwhite:
 ; Inputs: B: xleft
 ;         C: xright
 ;         D: y
+; Outputs: none
+; Modifies: BCDEHLFA
+
 
 hwhite:
 ; compute number of columns, store in E
@@ -338,67 +280,33 @@ hwpixloop:
 
 	RET
 
-; #############################
-; ##                         ##
-; ##  HORIZONTAL LINE BLACK  ##
-; ##                         ##
-; #############################
+; #######################
+; ##                   ##
+; ##  RECTANGLE WHITE  ##
+; ##                   ##
+; #######################
 
 ; Inputs: B: xleft
 ;         C: xright
-;         D: y
+;         D: ytop
+;         E: ybottom
+; Outputs: none
+; Modifies: DHLFA
 
-hblack:
-; compute number of columns, store in E
-	MOV	A,C
-	SUB	B
-	INR	A
-	MOV	E,A	; E = C - B + 1
+rwhite:
+	PUSH	B		; Save BC
+	PUSH	D		; Save DE
 
-; address of the first column: HL = FRAME_BUFFER + B * 32
-	MOV	L,B
-	MVI	H,0
-	DAD	H
-	DAD	H
-	DAD	H
-	DAD	H
-	DAD	H
-	LXI	B,FRAME_BUFFER
-	DAD	B
+	CALL	hwhite		; Draw one line
 
-; address of first pixel: HL += (255 - D) >> 3
+	POP	D		; Recover DE
+	POP	B		; Recover BC
+
 	MOV	A,D
-	CMA
-	RRC
-	RRC
-	RRC
-	ANI	31
-	ADD	L
-	MOV	L,A
+	CMP	E		; Check if drawn last line
+	RZ			; If yes, return
 
-; pattern of pixels: A = $80 >> (D & 7)
-	MOV	A,D
-	ANI	7
-	MOV	B,A
-	MVI	A,01111111b
-	JZ	hbshiftdone
-hbshift:
-	RRC
-	DCR	B
-	JNZ	hbshift
-hbshiftdone:
-	MOV	D,A
-
-; write the actual pixels
-	LXI	B,32
-hbpixloop:
-	MOV	A,D
-	ANA	M
-	MOV	M,A
-	DAD	B
-	DCR	E
-	JNZ	hbpixloop
-
-	RET
+	INR	D		; Move to next line
+        JMP	rwhite		; Continue
 
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
