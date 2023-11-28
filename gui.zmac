@@ -165,6 +165,25 @@ FRAME_BUFFER	.equ	$2400
 	MVI	E,200
 	CALL	rwhite
 
+	LXI	H,font
+	LXI	D,FRAME_BUFFER
+	MVI	B,8
+
+drawchar:
+	MOV	A,M
+	STAX	D
+
+	INX	H
+	MOV	A,E
+	ADI	32
+	MOV	E,A
+        MOV	A,D
+	ACI	0
+	MOV	D,A
+
+	DCR	B
+	JNZ	drawchar
+
 forever:
 	OUT	6		; Tickle watchdog
 	JMP	forever		; Main loop
@@ -308,5 +327,25 @@ rwhite:
 
 	INR	D		; Move to next line
         JMP	rwhite		; Continue
+
+; ####################
+; ####################
+; ###              ###
+; ###              ###
+; ###     DATA     ###
+; ###              ###
+; ###              ###
+; ####################
+; ####################
+
+font:
+	.defb	00000000b
+	.defb	01111110b
+	.defb	01001000b
+	.defb	01001000b
+	.defb	01001000b
+	.defb	01001000b
+	.defb	01111110b
+	.defb	00000000b
 
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
