@@ -159,15 +159,26 @@ FRAME_BUFFER	.equ	$2400
 	MVI	D,0
 	CALL	hwhite
 
+	MVI	B,0
+	MVI	C,223
+	MVI	D,8
+	CALL	hblack
+
 	MVI	B,100
-	MVI	C,200
+	MVI	C,199
 	MVI	D,100
-	MVI	E,200
+	MVI	E,199
 	CALL	rwhite
+
+	MVI	B,50
+	MVI	C,99
+	MVI	D,100
+	MVI	E,149
+	CALL	rblack
 
 	LXI	H,font
 	LXI	D,FRAME_BUFFER
-	MVI	B,8
+	MVI	B,32
 
 drawchar:
 	MOV	A,M
@@ -328,6 +339,102 @@ rwhite:
 	INR	D		; Move to next line
         JMP	rwhite		; Continue
 
+; #############################
+; ##                         ##
+; ##  HORIZONTAL LINE BLACK  ##
+; ##                         ##
+; #############################
+
+; Inputs: B: xleft
+;         C: xright
+;         D: y
+; Outputs: none
+; Modifies: BCDEHLFA
+
+
+hblack:
+; compute number of columns, store in E
+	MOV	A,C
+	SUB	B
+	INR	A
+	MOV	E,A	; E = C - B + 1
+
+; address of the first column: HL = FRAME_BUFFER + B * 32
+	MOV	L,B
+	MVI	H,0
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	LXI	B,FRAME_BUFFER
+	DAD	B
+
+; address of first pixel: HL += (255 - D) >> 3
+	MOV	A,D
+	CMA
+	RRC
+	RRC
+	RRC
+	ANI	31
+	ADD	L
+	MOV	L,A
+
+; pattern of pixels: A = $80 >> (D & 7)
+	MOV	A,D
+	ANI	7
+	MOV	B,A
+	MVI	A,10000000b
+	JZ	hbshiftdone
+hbshift:
+	RRC
+	DCR	B
+	JNZ	hbshift
+hbshiftdone:
+	CMA
+	MOV	D,A
+
+; write the actual pixels
+	LXI	B,32
+hbpixloop:
+	MOV	A,D
+	ANA	M
+	MOV	M,A
+	DAD	B
+	DCR	E
+	JNZ	hbpixloop
+
+	RET
+
+; #######################
+; ##                   ##
+; ##  RECTANGLE BLACK  ##
+; ##                   ##
+; #######################
+
+; Inputs: B: xleft
+;         C: xright
+;         D: ytop
+;         E: ybottom
+; Outputs: none
+; Modifies: DHLFA
+
+rblack:
+	PUSH	B		; Save BC
+	PUSH	D		; Save DE
+
+	CALL	hblack		; Draw one line
+
+	POP	D		; Recover DE
+	POP	B		; Recover BC
+
+	MOV	A,D
+	CMP	E		; Check if drawn last line
+	RZ			; If yes, return
+
+	INR	D		; Move to next line
+        JMP	rblack		; Continue
+
 ; ####################
 ; ####################
 ; ###              ###
@@ -339,13 +446,39 @@ rwhite:
 ; ####################
 
 font:
-	.defb	00000000b
-	.defb	01111110b
-	.defb	01001000b
-	.defb	01001000b
-	.defb	01001000b
-	.defb	01001000b
-	.defb	01111110b
-	.defb	00000000b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
+	.defb	11111111b
 
+	.defb	11111111b
+	.defb	10000001b
+	.defb	00000001b
+	.defb	01110111b
+	.defb	01110111b
+	.defb	00000001b
+	.defb	10000001b
+	.defb	11111111b
+
+	.defb	11111111b
+	.defb	00000001b
+	.defb	00000001b
+	.defb	01101101b
+	.defb	01101101b
+	.defb	00000001b
+	.defb	10010011b
+	.defb	11111111b
+
+	.defb	11111111b
+	.defb	10000011b
+	.defb	00000001b
+	.defb	01111101b
+	.defb	01111101b
+	.defb	00111001b
+	.defb	10111011b
+	.defb	11111111b
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
