@@ -176,6 +176,12 @@ FRAME_BUFFER	.equ	$2400
 	MVI	E,149
 	CALL	rblack
 
+	MVI	B,20
+	MVI	C,203
+	MVI	D,20
+	MVI	E,89
+	CALL	ui_window
+
 	LXI	H,font
 	LXI	D,FRAME_BUFFER
 	MVI	B,32
@@ -198,6 +204,98 @@ drawchar:
 forever:
 	OUT	6		; Tickle watchdog
 	JMP	forever		; Main loop
+
+; ###########################
+; ###########################
+; ###                     ###
+; ###                     ###
+; ###     UI ROUTINES     ###
+; ###                     ###
+; ###                     ###
+; ###########################
+; ###########################
+
+
+ui_window:
+	PUSH	B
+	PUSH	D
+	CALL	rblack
+	POP	D
+	POP	B
+	PUSH	B
+	PUSH	D
+	INR	B
+	DCR	C
+	DCR	C
+	INR	D
+	MOV	A,D
+	ADI	8
+	MOV	E,A
+	CALL	rwhite
+	POP	D
+	POP	B
+	PUSH	B
+	PUSH	D
+	INR	B
+	MOV	A,C
+	SBI	12
+	MOV	C,A
+	MOV	A,D
+	ADI	11
+	MOV	D,A
+	MOV	A,E
+	SBI	12
+	MOV	E,A
+	CALL	rwhite
+	POP	D
+	POP	B
+	PUSH	B
+	PUSH	D
+	MOV	A,C
+	SBI	2
+	MOV	C,A
+	SBI	8
+	MOV	B,A
+	MOV	A,E
+	SBI	2
+	MOV	E,A
+	SBI	8
+	MOV	D,A
+	CALL	rwhite
+	POP	D
+	POP	B
+	PUSH	B
+	PUSH	D
+	MOV	A,C
+	SBI	2
+	MOV	C,A
+	SBI	8
+	MOV	B,A
+	MOV	A,D
+	ADI	11
+	MOV	D,A
+	MOV	A,E
+	SBI	12
+	MOV	E,A
+	CALL	rwhite
+	POP	D
+	POP	B
+	PUSH	B
+	PUSH	D
+	INR	B
+	MOV	A,C
+	SBI	12
+	MOV	C,A
+	MOV	A,E
+	SBI	2
+	MOV	E,A
+	SBI	8
+	MOV	D,A
+	CALL	rwhite
+	POP	D
+	POP	B
+	RET
+
 
 ; #################################
 ; #################################
