@@ -154,52 +154,15 @@ FRAME_BUFFER	.equ	$2400
 
 	CALL	bg		; Fill background
 
-	MVI	B,0
-	MVI	C,223
-	MVI	D,0
-	CALL	hwhite
-
-	MVI	B,0
-	MVI	C,223
-	MVI	D,8
-	CALL	hblack
-
-	MVI	B,100
-	MVI	C,199
-	MVI	D,100
-	MVI	E,199
-	CALL	rwhite
-
-	MVI	B,50
-	MVI	C,99
-	MVI	D,100
-	MVI	E,149
-	CALL	rblack
-
 	MVI	B,20
 	MVI	C,203
 	MVI	D,20
 	MVI	E,89
 	CALL	ui_window
 
-	LXI	H,font
-	LXI	D,FRAME_BUFFER
-	MVI	B,32
-
-drawchar:
-	MOV	A,M
-	STAX	D
-
-	INX	H
-	MOV	A,E
-	ADI	32
-	MOV	E,A
-        MOV	A,D
-	ACI	0
-	MOV	D,A
-
-	DCR	B
-	JNZ	drawchar
+	MVI	B,60
+	MVI	C,160
+	CALL	one_char
 
 forever:
 	OUT	6		; Tickle watchdog
@@ -533,6 +496,74 @@ rblack:
 	INR	D		; Move to next line
         JMP	rblack		; Continue
 
+; #####################
+; ##                 ##
+; ##  ONE CHARACTER  ##
+; ##                 ##
+; #####################
+
+; Draws one character at the specified coordinates.
+; Coordinates are the top-left corner of the character.
+; Restrictions: no checks are performed on the inputs.
+
+; Inputs: B: x
+;         C: y
+;         D:
+;         E:
+; Outputs: none
+; Modifies: TBD
+
+one_char:
+	; A=? B=x C=y DE=? HL=?
+
+	; Compute x * 32 by adding HL to itself 5 times.
+	MOV	L,B	; 5
+	MVI	H,0	; 7
+	DAD	H	; 10
+	DAD	H	; 10
+	DAD	H	; 10
+	DAD	H	; 10
+	DAD	H	; 10
+
+	; A=? B=x C=y DE=? HL=32 * x
+
+	; Add framebuffer address
+	MOV	A,H	; 5
+	ADI	FRAME_BUFFER>>8	; 7
+	MOV	H,A	; 5
+
+	; Add y offset = (255 - y) / 8
+	MOV	A,C	; 5
+	CMA		; 4	- 
+	RAR		; 4
+	RAR		; 4
+	RAR		; 4
+	ANI	$1F	; 7
+	ADD	L	; 4
+	MOV	L,A	; 5
+
+	XCHG
+
+	LXI	H,font	; 10
+
+	MVI	B,8
+char_column:
+	MOV	A,M
+	STAX	D
+	DCR	B
+	RZ
+	INX	H
+	MOV	A,E
+	ADI	32
+	MOV	E,A
+	MOV	A,D
+	ACI	0
+	MOV	D,A
+	JMP	char_column
+
+	RET
+
+
 ; ####################
 ; ####################
 ; ###              ###
@@ -544,15 +575,6 @@ rblack:
 ; ####################
 
 font:
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-	.defb	11111111b
-
 	.defb	11111111b
 	.defb	10000001b
 	.defb	00000001b
@@ -578,5 +600,14 @@ font:
 	.defb	01111101b
 	.defb	00111001b
 	.defb	10111011b
+	.defb	11111111b
+
+	.defb	11111111b
+	.defb	00000001b
+	.defb	00000001b
+	.defb	01111101b
+	.defb	01111101b
+	.defb	00000001b
+	.defb	10000011b
 	.defb	11111111b
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
