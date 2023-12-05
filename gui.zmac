@@ -93,14 +93,14 @@
 ; Shifter
 ;
 ; port 2 output: number of bits to shift
-; port 4 output: data stream
-; port 3 input: data stream from port 4 shifted by number of bits
-;               specifed in port 2
+; port 4 output: data stream, low byte first
+; port 3 input: top 8 bits of the data stream, taken by shifting the data
+;               stream to the left by the number of bits specified in port 2
 ;
 ; Watchdog
 ;
-; port 6 output: in theory, any read or write will reset the watchdog.
-;                However, the 8bitworkshop emulator only resets on writes.
+; port 6: in theory, any read or write will reset the watchdog.
+;         However, the 8bitworkshop emulator only resets on writes.
 
 
 ; #############################
@@ -160,8 +160,12 @@ FRAME_BUFFER	.equ	$2400
 	MVI	E,89
 	CALL	ui_window
 
-	MVI	B,60
-	MVI	C,160
+	MVI	B,30
+	MVI	C,48
+	CALL	one_char
+
+	MVI	B,38
+	MVI	C,49
 	CALL	one_char
 
 forever:
