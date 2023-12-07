@@ -154,19 +154,15 @@ FRAME_BUFFER	.equ	$2400
 
 	CALL	bg		; Fill background
 
-	MVI	B,20
-	MVI	C,203
-	MVI	D,20
-	MVI	E,89
-	CALL	ui_window
+	LXI	B,20 * 256 + 203
+	LXI	D,20 * 256 + 89
+	CALL	ui_window	; Draw a hard-coded window
 
-	MVI	B,30
-	MVI	C,48
-	CALL	one_char
+	LXI	B,30 * 256 + 48
+	CALL	one_char	; Draw a hard-coded characters
 
-	MVI	B,40
-	MVI	C,49
-	CALL	one_char
+	LXI	B,40 * 256 + 49
+	CALL	one_char	; Draw a hard-coded characters
 
 	MVI	A,3
 	OUT	2
@@ -569,34 +565,42 @@ one_char:
 	; A=? B=x C=y DE=? HL=?
 
 	; Compute x * 32 by adding HL to itself 5 times.
-	MOV	L,B	; 5
-	MVI	H,0	; 7
-	DAD	H	; 10
-	DAD	H	; 10
-	DAD	H	; 10
-	DAD	H	; 10
-	DAD	H	; 10
+	MOV	L,B
+	MVI	H,0
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
+	DAD	H
 
 	; A=? B=x C=y DE=? HL=32 * x
 
 	; Add framebuffer address
-	MOV	A,H	; 5
-	ADI	FRAME_BUFFER>>8	; 7
-	MOV	H,A	; 5
+	; Trick: framebuffer address is a multiple of 256, so we only need
+	;        to add the high byte.
+	MOV	A,H
+	ADI	FRAME_BUFFER >> 8
+	MOV	H,A
+
+	; A=? B=x C=y DE=? HL=column address
 
 	; Add y offset = (255 - y) / 8
-	MOV	A,C	; 5
-	CMA		; 4	- 
-	RAR		; 4
-	RAR		; 4
-	RAR		; 4
-	ANI	$1F	; 7
-	ADD	L	; 4
-	MOV	L,A	; 5
+	; Trick: columns are aligned on 32 bytes, guaranteeing that columns
+	;        don't cross page boundaries.
+	MOV	A,C
+	CMA		; invert all bits = 255 - y
+	RAR
+	RAR
+	RAR
+	ANI	$1F	; clear the unnecessary bits left over by the rotations
+	ADD	L
+	MOV	L,A
+
+	; A=? B=x C=y DE=? HL=destination address
 
 	XCHG
 
-	LXI	H,font	; 10
+	LXI	H,font
 
 	MVI	B,8
 char_column:
