@@ -103,18 +103,42 @@
 ;         However, the 8bitworkshop emulator only resets on writes.
 
 
-; #############################
-; #############################
-; ###                       ###
-; ###                       ###
-; ###     MEMORY LAYOUT     ###
-; ###                       ###
-; ###                       ###
-; #############################
-; #############################
+; ####################################
+; ####################################
+; ###                              ###
+; ###                              ###
+; ###     MEMORY / PORT LAYOUT     ###
+; ###                              ###
+; ###                              ###
+; ####################################
+; ####################################
+
+; ###########
+; ##       ##
+; ##  RAM  ##
+; ##       ##
+; ###########
 
 STACK_TOP	.equ	$2400
 FRAME_BUFFER	.equ	$2400
+
+; ##############
+; ##          ##
+; ##  INPUTS  ##
+; ##          ##
+; ##############
+
+SHIFTER_OUTPUT	.equ	3
+
+; ###############
+; ##           ##
+; ##  OUTPUTS  ##
+; ##           ##
+; ###############
+
+SHIFTER_AMOUNT	.equ	2
+SHIFTER_INPUT	.equ	4
+WATCHDOG	.equ	6
 
 
 ; ####################
@@ -137,8 +161,12 @@ FRAME_BUFFER	.equ	$2400
 				; but zmac and 8bitworkshop support full Z80
 				; such that there's a risk that this code
 				; might not work on actual hardware (or on
-				; a strict 8080 emulator)
-                                ; This also means that the few areas
+				; a strict 8080 emulator.)
+				; This also means that the few areas where
+				; Z80 isn't exactly backward-compatible with
+				; 8080 (e.g. P/V flag on arithmetic operations)
+				; are areas of risk. That also includes timings
+				; which are slightly different between the two.
 
 	.org	0		; Execution starts at address 0
 
@@ -164,56 +192,11 @@ FRAME_BUFFER	.equ	$2400
 	LXI	B,40 * 256 + 49
 	CALL	one_char	; Draw a hard-coded characters
 
-	MVI	A,3
-	OUT	2
-
-	XRA	A
-	OUT	4
-	CMA
-	OUT	4
-	IN	3
-	CMA
-	MOV	C,A
-	OUT	4
-
-	LXI	D,font
-	LXI	H,FRAME_BUFFER+1015
-
-	MVI	B,8
-
-	LDAX	D
-	INX	D
-	OUT	4
-
-charcol:
-	IN	3
-	CMA
-	ORA	C
-	ANA	M
-	MOV	M,A
-	INX	H
-	LDAX	D
-	INX	D
-	OUT	4
-	IN	3
-	ANA	C
-	CMA
-	ANA	M
-	MOV	M,A
-	MVI	A,31
-	ADD	L
-	MOV	L,A
-	MOV	A,H
-	ADC	0
-	MOV	H,A
-
-	DCR	B
-	JNZ	charcol
-
-
+	LXI	B,41 * 256 + 59
+	CALL	one_char	; Draw a hard-coded characters
 
 forever:
-	OUT	6		; Tickle watchdog
+	OUT	WATCHDOG	; Tickle watchdog
 	JMP	forever		; Main loop
 
 ; ###########################
@@ -554,6 +537,34 @@ rblack:
 ; Coordinates are the top-left corner of the character.
 ; Restrictions: no checks are performed on the inputs.
 
+; There's something conceptually weird in the shifting process, which makes
+; things hard to count: strictly speaking, there are 64 bits of input and 64
+; bits of output.
+; However, the various byte alignments throw this off: the output spans 16
+; bytes, albeit masked so that there are only 64 active bits. The main loop
+; therefore covers 8 iterations of 2 output bytes each.
+; The first read of an iteration actually retrieves the same byte from the
+; shifter as the second read of the previous iteration, though it gets masked
+; differently so that there are no duplicated bits in the output. That implies
+; that 9 different bytes are read from the shifter, which in turn implies that
+; 10 different bytes are written to the shifter that affect the output, with
+; the first and last byte having no impact on the final output.
+; The first byte ends up being whatever was in the shifter before, while the
+; last byte needs to be explicitly written in order to make the shifter shift
+; that last byte ends up being read through an intentional buffer overflow.
+
+; There's a tiny bit of magic in the masking code: since the characters are
+; stored exactly 8 pixels tall, the top mask and the bottom mask are bitwise
+; complements of each other, which can apparently save one register. However,
+; a naive approach would flip the bits for each operation, which would be
+; expensive: move to the accumulator, flip the bits, move back to the register,
+; twice for each loop iteration. Instead, the code uses the fact that
+; (x OR NOT mask) is also (NOT (NOT x AND mask)) where, in the latter version,
+; the mask doesn't need to be flipped. For convenience and a tiny optimization,
+; the font is stored flipped from its framebuffer representation, which moves
+; the NOT operations around but keeps the property of not having to bit-flip
+; the mask.
+
 ; Inputs: B: x
 ;         C: y
 ;         D:
@@ -598,24 +609,65 @@ one_char:
 
 	; A=? B=x C=y DE=? HL=destination address
 
-	XCHG
+	; Compute sub-byte shift count = (255 - y) % 8
+	MOV	A,C
+	CMA
+	ANI	$07
+	OUT	SHIFTER_AMOUNT
 
-	LXI	H,font
+	; A=? B=x C=y DE=? HL=destination address
 
+	; Compute the bit mask using the shifter itself.
+	XRA	A		; Cheap way to clear A
+	OUT	SHIFTER_INPUT
+	CMA			; A = $FF
+	OUT	SHIFTER_INPUT
+	IN	SHIFTER_OUTPUT
+	MOV	C,A
+
+	; A=? B=x C=mask DE=? HL=destination address
+
+	; Character address
+	LXI	D,font
+
+	; A=? B=x C=mask DE=source address HL=destination address
+
+	; Loop count
 	MVI	B,8
+
+	; A=? B=loop C=mask DE=source address HL=destination address
+
+	; Insert the first actual byte into the shifter, point to the next byte
+	LDAX	D
+	OUT	SHIFTER_INPUT
+	INX	D
+
 char_column:
-	MOV	A,M
-	STAX	D
-	DCR	B
-	RZ
+	IN	SHIFTER_OUTPUT
+	ANA	C
+	CMA
+	ANA	M
+	MOV	M,A
 	INX	H
-	MOV	A,E
-	ADI	32
-	MOV	E,A
-	MOV	A,D
-	ACI	0
-	MOV	D,A
-	JMP	char_column
+
+	LDAX	D
+	INX	D
+	OUT	SHIFTER_INPUT
+
+	IN	SHIFTER_OUTPUT
+	CMA
+	ORA	C
+	ANA	M
+	MOV	M,A
+	MVI	A,31
+	ADD	L
+	MOV	L,A
+	MOV	A,H
+	ADC	0
+	MOV	H,A
+
+	DCR	B
+	JNZ	char_column
 
 	RET
 
