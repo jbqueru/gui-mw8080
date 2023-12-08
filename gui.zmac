@@ -187,13 +187,49 @@ WATCHDOG	.equ	6
 	CALL	ui_window	; Draw a hard-coded window
 
 	LXI	B,30 * 256 + 48
-	CALL	one_char	; Draw a hard-coded characters
+	MVI	E,6
+	CALL	one_char	; Draw a character
 
-	LXI	B,40 * 256 + 49
-	CALL	one_char	; Draw a hard-coded characters
+	LXI	B,38 * 256 + 48
+	MVI	E,3
+	CALL	one_char	; Draw a character
 
-	LXI	B,41 * 256 + 59
-	CALL	one_char	; Draw a hard-coded characters
+	LXI	B,46 * 256 + 48
+	MVI	E,5
+	CALL	one_char	; Draw a character
+
+	LXI	B,54 * 256 + 48
+	MVI	E,0
+	CALL	one_char	; Draw a character
+
+	LXI	B,62 * 256 + 48
+	MVI	E,1
+	CALL	one_char	; Draw a character
+
+	LXI	B,70 * 256 + 48
+	MVI	E,10
+	CALL	one_char	; Draw a character
+
+	LXI	B,78 * 256 + 48
+	MVI	E,8
+	CALL	one_char	; Draw a character
+
+	LXI	B,86 * 256 + 48
+	MVI	E,9
+	CALL	one_char	; Draw a character
+
+	LXI	B,94 * 256 + 48
+	MVI	E,3
+	CALL	one_char	; Draw a character
+
+	LXI	B,102 * 256 + 48
+	MVI	E,7
+	CALL	one_char	; Draw a character
+
+	LXI	B,110 * 256 + 48
+	MVI	E,8
+	CALL	one_char	; Draw a character
+
 
 forever:
 	OUT	WATCHDOG	; Tickle watchdog
@@ -568,12 +604,25 @@ rblack:
 ; Inputs: B: x
 ;         C: y
 ;         D:
-;         E:
+;         E: character
 ; Outputs: none
 ; Modifies: TBD
 
 one_char:
-	; A=? B=x C=y DE=? HL=?
+	; A=? B=x C=y D=? E=char HL=?
+
+	; Compute source address
+	MVI	D,0
+	XCHG
+	DAD	H
+	DAD	H
+	DAD	H
+	XCHG
+	MOV	A,D
+	ADI	font >> 8
+	MOV	D,A
+
+	; A=? B=x C=y DE=source HL=?
 
 	; Compute x * 32 by adding HL to itself 5 times.
 	MOV	L,B
@@ -584,7 +633,7 @@ one_char:
 	DAD	H
 	DAD	H
 
-	; A=? B=x C=y DE=? HL=32 * x
+	; A=? B=x C=y DE=source HL=32 * x
 
 	; Add framebuffer address
 	; Trick: framebuffer address is a multiple of 256, so we only need
@@ -593,7 +642,7 @@ one_char:
 	ADI	FRAME_BUFFER >> 8
 	MOV	H,A
 
-	; A=? B=x C=y DE=? HL=column address
+	; A=? B=x C=y DE=source HL=column address
 
 	; Add y offset = (255 - y) / 8
 	; Trick: columns are aligned on 32 bytes, guaranteeing that columns
@@ -607,7 +656,7 @@ one_char:
 	ADD	L
 	MOV	L,A
 
-	; A=? B=x C=y DE=? HL=destination address
+	; A=? B=x C=y DE=source HL=destination
 
 	; Compute sub-byte shift count = (255 - y) % 8
 	MOV	A,C
@@ -615,7 +664,7 @@ one_char:
 	ANI	$07
 	OUT	SHIFTER_AMOUNT
 
-	; A=? B=x C=y DE=? HL=destination address
+	; A=? B=x C=y DE=source HL=destination
 
 	; Compute the bit mask using the shifter itself.
 	XRA	A		; Cheap way to clear A
@@ -625,24 +674,20 @@ one_char:
 	IN	SHIFTER_OUTPUT
 	MOV	C,A
 
-	; A=? B=x C=mask DE=? HL=destination address
-
-	; Character address
-	LXI	D,font
-
-	; A=? B=x C=mask DE=source address HL=destination address
+	; A=? B=x C=mask DE=source HL=destination
 
 	; Loop count
 	MVI	B,8
 
-	; A=? B=loop C=mask DE=source address HL=destination address
+	; A=? B=loop C=mask DE=source HL=destination
 
-	; Insert the first actual byte into the shifter, point to the next byte
+	; Insert the first data byte into the shifter, point to next input byte
 	LDAX	D
 	OUT	SHIFTER_INPUT
 	INX	D
 
 char_column:
+	; Write the bottom byte for the column, point output to the top byte
 	IN	SHIFTER_OUTPUT
 	ANA	C
 	CMA
@@ -650,10 +695,12 @@ char_column:
 	MOV	M,A
 	INX	H
 
+	; Insert the next byte into the shifter, so that the shifter shifts
 	LDAX	D
 	INX	D
 	OUT	SHIFTER_INPUT
 
+	; Write the bottom byte for the column, point output to next column
 	IN	SHIFTER_OUTPUT
 	CMA
 	ORA	C
@@ -666,6 +713,7 @@ char_column:
 	ADC	0
 	MOV	H,A
 
+	; Loop to next column
 	DCR	B
 	JNZ	char_column
 
@@ -682,58 +730,118 @@ char_column:
 ; ####################
 ; ####################
 
+	.org	$1D00
 font:
-	.defb	11111111b
-	.defb	10000001b
-	.defb	10000001b
-	.defb	10000001b
-	.defb	10000001b
-	.defb	10000001b
-	.defb	10000001b
-	.defb	11111111b
-
+	; A
 	.defb	00000000b
+	.defb	00111110b
 	.defb	01111110b
+	.defb	11001000b
+	.defb	11001000b
 	.defb	01111110b
-	.defb	01111110b
-	.defb	01111110b
-	.defb	01111110b
-	.defb	01111110b
+	.defb	00111110b
 	.defb	00000000b
 
-	.defb	11111111b
-	.defb	10000001b
-	.defb	00000001b
-	.defb	01110111b
-	.defb	01110111b
-	.defb	00000001b
-	.defb	10000001b
-	.defb	11111111b
+	; B
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11111110b
+	.defb	01101100b
+	.defb	00000000b
 
-	.defb	11111111b
-	.defb	00000001b
-	.defb	00000001b
-	.defb	01101101b
-	.defb	01101101b
-	.defb	00000001b
-	.defb	10010011b
-	.defb	11111111b
+	; C
+	.defb	00111000b
+	.defb	01111100b
+	.defb	11000110b
+	.defb	10000010b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	01000100b
+	.defb	00000000b
 
-	.defb	11111111b
-	.defb	10000011b
-	.defb	00000001b
-	.defb	01111101b
-	.defb	01111101b
-	.defb	00111001b
-	.defb	10111011b
-	.defb	11111111b
+	; E
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10111010b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	00000000b
 
-	.defb	11111111b
-	.defb	00000001b
-	.defb	00000001b
-	.defb	01111101b
-	.defb	01111101b
-	.defb	00000001b
-	.defb	10000011b
-	.defb	11111111b
+	; F
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10111000b
+	.defb	10000000b
+	.defb	11000000b
+	.defb	00000000b
+
+	; G
+	.defb	00111000b
+	.defb	01111100b
+	.defb	11000110b
+	.defb	10000010b
+	.defb	10001010b
+	.defb	11001110b
+	.defb	01001110b
+	.defb	00000000b
+
+	; M
+	.defb	11111110b
+	.defb	11111110b
+	.defb	01110000b
+	.defb	00111000b
+	.defb	01110000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00000000b
+
+	; R
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10010000b
+	.defb	10011000b
+	.defb	11111110b
+	.defb	01100110b
+	.defb	00000000b
+
+	; S
+	.defb	00000000b
+	.defb	01100100b
+	.defb	11110110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11011110b
+	.defb	01001100b
+	.defb	00000000b
+
+	; T
+	.defb	00000000b
+	.defb	11000000b
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10000010b
+	.defb	11000000b
+	.defb	00000000b
+
+	; U
+	.defb	00000000b
+	.defb	11111100b
+	.defb	11111110b
+	.defb	00000010b
+	.defb	00000010b
+	.defb	11111110b
+	.defb	11111100b
+	.defb	00000000b
+
+
+
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
