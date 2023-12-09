@@ -618,21 +618,21 @@ one_char:
 	; A=? B=x C=y D=? E=char HL=?
 
 	; Compute source address
-	MVI	D,0
-	XCHG
+	MVI	D,0		; Clear high bits
+	XCHG			; Exchange DE and HL for HL-only instructions
 	DAD	H
 	DAD	H
 	DAD	H
-	XCHG
-	MOV	A,D
+	XCHG			; Exchange HL and DE back
+	MOV	A,D		; Add the font address (multiple of 256)
 	ADI	(font >> 8) - 1
 	MOV	D,A
 
 	; A=? B=x C=y DE=source HL=?
 
-	; Compute x * 32 by adding HL to itself 5 times.
+	; Compute x * 32 by adding HL to itself 5 times
 	MOV	L,B
-	MVI	H,0
+	MVI	H,0		; Clear high bits
 	DAD	H
 	DAD	H
 	DAD	H
@@ -643,7 +643,7 @@ one_char:
 
 	; Add framebuffer address
 	; Trick: framebuffer address is a multiple of 256, so we only need
-	;        to add the high byte.
+	;        to add the high byte
 	MOV	A,H
 	ADI	FRAME_BUFFER >> 8
 	MOV	H,A
@@ -651,14 +651,14 @@ one_char:
 	; A=? B=x C=y DE=source HL=column address
 
 	; Add y offset = (255 - y) / 8
-	; Trick: columns are aligned on 32 bytes, guaranteeing that columns
-	;        don't cross page boundaries.
+	; Trick: columns are aligned on 32 bytes, so we only need to add
+        ;        the low byte
 	MOV	A,C
 	CMA		; invert all bits = 255 - y
+	ANI	$F8	; clear the unnecessary bits
 	RAR
 	RAR
 	RAR
-	ANI	$1F	; clear the unnecessary bits left over by the rotations
 	ADD	L
 	MOV	L,A
 
