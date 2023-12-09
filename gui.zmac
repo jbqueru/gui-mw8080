@@ -187,47 +187,51 @@ WATCHDOG	.equ	6
 	CALL	ui_window	; Draw a hard-coded window
 
 	LXI	B,30 * 256 + 48
-	MVI	E,6
+	MVI	E,'M'
 	CALL	one_char	; Draw a character
 
 	LXI	B,38 * 256 + 48
-	MVI	E,3
+	MVI	E,'E'
 	CALL	one_char	; Draw a character
 
 	LXI	B,46 * 256 + 48
-	MVI	E,5
+	MVI	E,'G'
 	CALL	one_char	; Draw a character
 
 	LXI	B,54 * 256 + 48
-	MVI	E,0
+	MVI	E,'A'
 	CALL	one_char	; Draw a character
 
 	LXI	B,62 * 256 + 48
-	MVI	E,1
+	MVI	E,'B'
 	CALL	one_char	; Draw a character
 
 	LXI	B,70 * 256 + 48
-	MVI	E,10
+	MVI	E,'U'
 	CALL	one_char	; Draw a character
 
 	LXI	B,78 * 256 + 48
-	MVI	E,8
+	MVI	E,'S'
 	CALL	one_char	; Draw a character
 
 	LXI	B,86 * 256 + 48
-	MVI	E,9
+	MVI	E,'T'
 	CALL	one_char	; Draw a character
 
 	LXI	B,94 * 256 + 48
-	MVI	E,3
+	MVI	E,'E'
 	CALL	one_char	; Draw a character
 
 	LXI	B,102 * 256 + 48
-	MVI	E,7
+	MVI	E,'R'
 	CALL	one_char	; Draw a character
 
 	LXI	B,110 * 256 + 48
-	MVI	E,8
+	MVI	E,'S'
+	CALL	one_char	; Draw a character
+
+	LXI	B,140 * 256 + 60
+	MVI	E,' '
 	CALL	one_char	; Draw a character
 
 
@@ -612,6 +616,9 @@ one_char:
 	; A=? B=x C=y D=? E=char HL=?
 
 	; Compute source address
+	MOV	A,E
+	SBI	32
+	MOV	E,A
 	MVI	D,0
 	XCHG
 	DAD	H
@@ -732,6 +739,119 @@ char_column:
 
 	.org	$1D00
 font:
+	; space
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	01111100b
+	.defb	00111000b
+	.defb	00000000b
+
+	; !
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+
+	; "
+	.defs	8
+
+	; #
+	.defs	8
+
+	; $
+	.defs	8
+
+	; %
+	.defs	8
+
+	; &
+	.defs	8
+
+	; '
+	.defs	8
+
+	; (
+	.defs	8
+
+	; )
+	.defs	8
+
+	; *
+	.defs	8
+
+	; +
+	.defs	8
+
+	; ,
+	.defs	8
+
+	; -
+	.defs	8
+
+	; .
+	.defs	8
+
+	; /
+	.defs	8
+
+	; 0
+	.defs	8
+
+	; 1
+	.defs	8
+
+	; 2
+	.defs	8
+
+	; 3
+	.defs	8
+
+	; 4
+	.defs	8
+
+	; 5
+	.defs	8
+
+	; 6
+	.defs	8
+
+	; 7
+	.defs	8
+
+	; 8
+	.defs	8
+
+	; 9
+	.defs	8
+
+	; :
+	.defs	8
+
+	; ;
+	.defs	8
+
+	; <
+	.defs	8
+
+	; =
+	.defs	8
+
+	; >
+	.defs	8
+
+	; ?
+	.defs	8
+
+	; @
+	.defs	8
+
 	; A
 	.defb	00000000b
 	.defb	00111110b
@@ -760,6 +880,16 @@ font:
 	.defb	10000010b
 	.defb	11000110b
 	.defb	01000100b
+	.defb	00000000b
+
+	; D
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	01111100b
+	.defb	00111000b
 	.defb	00000000b
 
 	; E
@@ -792,6 +922,21 @@ font:
 	.defb	01001110b
 	.defb	00000000b
 
+	; H
+	.defs	8
+
+	; I
+	.defs	8
+
+	; J
+	.defs	8
+
+	; K
+	.defs	8
+
+	; L
+	.defs	8
+
 	; M
 	.defb	11111110b
 	.defb	11111110b
@@ -801,6 +946,18 @@ font:
 	.defb	11111110b
 	.defb	11111110b
 	.defb	00000000b
+
+	; N
+	.defs	8
+
+	; O
+	.defs	8
+
+	; P
+	.defs	8
+
+	; Q
+	.defs	8
 
 	; R
 	.defb	10000010b
@@ -842,6 +999,136 @@ font:
 	.defb	11111100b
 	.defb	00000000b
 
+	; V
+	.defs	8
 
+	; W
+	.defs	8
 
+	; X
+	.defs	8
+
+	; Y
+	.defs	8
+
+	; Z
+	.defs	8
+
+	; [
+	.defs	8
+
+	; \
+	.defs	8
+
+	; ]
+	.defs	8
+
+	; ^
+	.defs	8
+
+	; _
+	.defs	8
+
+	; `
+	.defs	8
+
+	; a
+	.defs	8
+
+	; b
+	.defs	8
+
+	; c
+	.defs	8
+
+	; d
+	.defs	8
+
+	; e
+	.defs	8
+
+	; f
+	.defs	8
+
+	; g
+	.defs	8
+
+	; h
+	.defs	8
+
+	; i
+	.defs	8
+
+	; j
+	.defs	8
+
+	; k
+	.defs	8
+
+	; l
+	.defs	8
+
+	; m
+	.defs	8
+
+	; n
+	.defs	8
+
+	; o
+	.defs	8
+
+	; p
+	.defs	8
+
+	; q
+	.defs	8
+
+	; r
+	.defs	8
+
+	; s
+	.defs	8
+
+	; t
+	.defs	8
+
+	; u
+	.defs	8
+
+	; v
+	.defs	8
+
+	; w
+	.defs	8
+
+	; x
+	.defs	8
+
+	; y
+	.defs	8
+
+	; z
+	.defs	8
+
+	; {
+	.defs	8
+
+	; |
+	.defs	8
+
+	; }
+	.defs	8
+
+	; ~
+	.defs	8
+
+	; del
+	.defb	10101010b
+	.defb	10101010b
+	.defb	01010101b
+	.defb	01010101b
+	.defb	10101010b
+	.defb	10101010b
+	.defb	01010101b
+	.defb	01010101b
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
