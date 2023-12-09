@@ -740,24 +740,17 @@ char_column:
 	.org	$1D00
 font:
 	; space
-	.defb	10000010b
-	.defb	11111110b
-	.defb	11111110b
-	.defb	10000010b
-	.defb	11000110b
-	.defb	01111100b
-	.defb	00111000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 	.defb	00000000b
 
 	; !
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
-	.defb	00000000b
+	.defs	8
 
 	; "
 	.defs	8
@@ -923,19 +916,54 @@ font:
 	.defb	00000000b
 
 	; H
-	.defs	8
+	.defb	00000000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00000000b
 
 	; I
-	.defs	8
+	.defb	00000000b
+	.defb	10000010b
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10000010b
+	.defb	10000010b
+	.defb	00000000b
 
 	; J
-	.defs	8
+	.defb	00001100b
+	.defb	00001110b
+	.defb	00000010b
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111100b
+	.defb	10000000b
+	.defb	00000000b
 
 	; K
-	.defs	8
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00010000b
+	.defb	00111000b
+	.defb	11101110b
+	.defb	11000110b
+	.defb	00000000b
 
 	; L
-	.defs	8
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10000010b
+	.defb	00000010b
+	.defb	00000110b
+	.defb	00001110b
+	.defb	00000000b
 
 	; M
 	.defb	11111110b
@@ -948,16 +976,44 @@ font:
 	.defb	00000000b
 
 	; N
-	.defs	8
+	.defb	11111110b
+	.defb	11111110b
+	.defb	01100000b
+	.defb	00110000b
+	.defb	00011000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00000000b
 
 	; O
-	.defs	8
+	.defb	00111000b
+	.defb	01111100b
+	.defb	11000110b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	01111100b
+	.defb	00111000b
+	.defb	00000000b
 
 	; P
-	.defs	8
+	.defb	10000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10010000b
+	.defb	11110000b
+	.defb	01100000b
+	.defb	00000000b
 
 	; Q
-	.defs	8
+	.defb	00111100b
+	.defb	01111110b
+	.defb	11000010b
+	.defb	10001010b
+	.defb	11001100b
+	.defb	01110110b
+	.defb	00111010b
+	.defb	00000000b
 
 	; R
 	.defb	10000010b
@@ -1000,19 +1056,54 @@ font:
 	.defb	00000000b
 
 	; V
-	.defs	8
+	.defb	00000000b
+	.defb	11111000b
+	.defb	11111100b
+	.defb	00000110b
+	.defb	00000110b
+	.defb	11111100b
+	.defb	11111000b
+	.defb	00000000b
 
 	; W
-	.defs	8
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00001100b
+	.defb	00011000b
+	.defb	00001100b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00000000b
 
 	; X
-	.defs	8
+	.defb	10000110b
+	.defb	11001110b
+	.defb	01111000b
+	.defb	00110000b
+	.defb	01111000b
+	.defb	11001110b
+	.defb	10000110b
+	.defb	00000000b
 
 	; Y
-	.defs	8
+	.defb	00000000b
+	.defb	11100000b
+	.defb	11110010b
+	.defb	00011110b
+	.defb	00011110b
+	.defb	11110010b
+	.defb	11100000b
+	.defb	00000000b
 
 	; Z
-	.defs	8
+	.defb	11100010b
+	.defb	11000110b
+	.defb	10001110b
+	.defb	10011010b
+	.defb	10110010b
+	.defb	11100110b
+	.defb	11001110b
+	.defb	00000000b
 
 	; [
 	.defs	8
