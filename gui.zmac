@@ -618,9 +618,6 @@ one_char:
 	; A=? B=x C=y D=? E=char HL=?
 
 	; Compute source address
-	MOV	A,E
-	SBI	32
-	MOV	E,A
 	MVI	D,0
 	XCHG
 	DAD	H
@@ -628,7 +625,7 @@ one_char:
 	DAD	H
 	XCHG
 	MOV	A,D
-	ADI	font >> 8
+	ADI	(font >> 8) - 1
 	MOV	D,A
 
 	; A=? B=x C=y DE=source HL=?
@@ -762,88 +759,284 @@ font:
 	.defb	00000000b
 
 	; "
-	.defs	8
+	.defb	00000000b
+	.defb	11100000b
+	.defb	11100000b
+	.defb	00000000b
+	.defb	11100000b
+	.defb	11100000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; #
-	.defs	8
+	.defb	00101000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00101000b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00101000b
+	.defb	00000000b
 
 	; $
-	.defs	8
+	.defb	00000000b
+	.defb	00100100b
+	.defb	01010100b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	01010100b
+	.defb	01001000b
+	.defb	00000000b
 
 	; %
-	.defs	8
+	.defb	01100010b
+	.defb	01100110b
+	.defb	00001100b
+	.defb	00011000b
+	.defb	00110000b
+	.defb	01100110b
+	.defb	01000110b
+	.defb	00000000b
 
 	; &
-	.defs	8
+	.defb	00001100b
+	.defb	01011110b
+	.defb	11110010b
+	.defb	10111010b
+	.defb	11101100b
+	.defb	01011110b
+	.defb	00010010b
+	.defb	00000000b
 
 	; '
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00100000b
+	.defb	11100000b
+	.defb	11000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; (
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00111000b
+	.defb	01111100b
+	.defb	11000110b
+	.defb	10000010b
+	.defb	00000000b
+	.defb	00000000b
 
 	; )
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	10000010b
+	.defb	11000110b
+	.defb	01111100b
+	.defb	00111000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; *
-	.defs	8
+	.defb	00010000b
+	.defb	01010100b
+	.defb	01111100b
+	.defb	00111000b
+	.defb	00111000b
+	.defb	01111100b
+	.defb	01010100b
+	.defb	00010000b
 
 	; +
-	.defs	8
+	.defb	00000000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	01111100b
+	.defb	01111100b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00000000b
 
 	; ,
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000001b
+	.defb	00000111b
+	.defb	00000110b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; -
-	.defs	8
+	.defb	00000000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00010000b
+	.defb	00000000b
 
 	; .
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000110b
+	.defb	00000110b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; /
-	.defs	8
+	.defb	00000110b
+	.defb	00001100b
+	.defb	00011000b
+	.defb	00110000b
+	.defb	01100000b
+	.defb	11000000b
+	.defb	10000000b
+	.defb	00000000b
 
 	; 0
-	.defs	8
+	.defb	01111100b
+	.defb	11111110b
+	.defb	10001010b
+	.defb	10010010b
+	.defb	10100010b
+	.defb	11111110b
+	.defb	01111100b
+	.defb	00000000b
 
 	; 1
-	.defs	8
+	.defb	00000000b
+	.defb	00000010b
+	.defb	01000010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00000010b
+	.defb	00000010b
+	.defb	00000000b
 
 	; 2
-	.defs	8
+	.defb	00000000b
+	.defb	01001110b
+	.defb	11011110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11110110b
+	.defb	01100110b
+	.defb	00000000b
 
 	; 3
-	.defs	8
+	.defb	00000000b
+	.defb	01000100b
+	.defb	11000110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11111110b
+	.defb	01101100b
+	.defb	00000000b
 
 	; 4
-	.defs	8
+	.defb	00011000b
+	.defb	00111000b
+	.defb	01101000b
+	.defb	11001010b
+	.defb	11111110b
+	.defb	11111110b
+	.defb	00001010b
+	.defb	00000000b
 
 	; 5
-	.defs	8
+	.defb	00000000b
+	.defb	11110100b
+	.defb	11110110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	10011110b
+	.defb	11001100b
+	.defb	00000000b
 
 	; 6
-	.defs	8
+	.defb	00000000b
+	.defb	01111100b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11011110b
+	.defb	01001100b
+	.defb	00000000b
 
 	; 7
-	.defs	8
+	.defb	00000000b
+	.defb	11000000b
+	.defb	11000000b
+	.defb	10001110b
+	.defb	10011110b
+	.defb	11110000b
+	.defb	11100000b
+	.defb	00000000b
 
 	; 8
-	.defs	8
+	.defb	00000000b
+	.defb	01101100b
+	.defb	11111110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11111110b
+	.defb	01101100b
+	.defb	00000000b
 
 	; 9
-	.defs	8
+	.defb	00000000b
+	.defb	01100100b
+	.defb	11110110b
+	.defb	10010010b
+	.defb	10010010b
+	.defb	11111110b
+	.defb	01111100b
+	.defb	00000000b
 
 	; :
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00110110b
+	.defb	00110110b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; ;
-	.defs	8
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000001b
+	.defb	00110111b
+	.defb	00110110b
+	.defb	00000000b
+	.defb	00000000b
+	.defb	00000000b
 
 	; <
-	.defs	8
+	.defb	00000000b
+	.defb	00010000b
+	.defb	00111000b
+	.defb	01101100b
+	.defb	11000110b
+	.defb	10000010b
+	.defb	00000000b
+	.defb	00000000b
 
 	; =
-	.defs	8
+	.defb	00000000b
+	.defb	00100100b
+	.defb	00100100b
+	.defb	00100100b
+	.defb	00100100b
+	.defb	00100100b
+	.defb	00100100b
+	.defb	00000000b
 
 	; >
 	.defb	00000000b
