@@ -188,54 +188,26 @@ WATCHDOG	.equ	6
 	LXI	D,20 * 256 + 89
 	CALL	ui_window	; Draw a hard-coded window
 
-	LXI	B,30 * 256 + 48
-	MVI	E,'M'
-	CALL	one_char	; Draw a character
 
-	LXI	B,38 * 256 + 48
-	MVI	E,'E'
-	CALL	one_char	; Draw a character
+	LXI	B,33 * 256 + 60
+	LXI	H,text
+next_char:
+	MOV	A,M
+	CPI	0
+	JZ	done_text
+	MOV	E,A
+	INX	H
+	PUSH	B
+	PUSH	H
+	CALL	one_char
+	POP	H
+	POP	B
+	MOV	A,B
+	ADI	8
+	MOV	B,A
+	JP	next_char
 
-	LXI	B,46 * 256 + 48
-	MVI	E,'G'
-	CALL	one_char	; Draw a character
-
-	LXI	B,54 * 256 + 48
-	MVI	E,'A'
-	CALL	one_char	; Draw a character
-
-	LXI	B,62 * 256 + 48
-	MVI	E,'B'
-	CALL	one_char	; Draw a character
-
-	LXI	B,70 * 256 + 48
-	MVI	E,'U'
-	CALL	one_char	; Draw a character
-
-	LXI	B,78 * 256 + 48
-	MVI	E,'S'
-	CALL	one_char	; Draw a character
-
-	LXI	B,86 * 256 + 48
-	MVI	E,'T'
-	CALL	one_char	; Draw a character
-
-	LXI	B,94 * 256 + 48
-	MVI	E,'E'
-	CALL	one_char	; Draw a character
-
-	LXI	B,102 * 256 + 48
-	MVI	E,'R'
-	CALL	one_char	; Draw a character
-
-	LXI	B,110 * 256 + 48
-	MVI	E,'S'
-	CALL	one_char	; Draw a character
-
-	LXI	B,140 * 256 + 60
-	MVI	E,' '
-	CALL	one_char	; Draw a character
-
+done_text:
 
 forever:
 	OUT	WATCHDOG	; Tickle watchdog
@@ -735,6 +707,9 @@ char_column:
 ; ###              ###
 ; ####################
 ; ####################
+
+text:
+	.defb	'MegaBusters',0
 
 	.org	$1D00
 font:
