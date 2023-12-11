@@ -61,11 +61,11 @@
 ;
 ; port 1 input
 ;   0 - coin, debounced? (returns 1 once per coin, resets after read)
-;   1 - 2P start
-;   2 - 1P start
-;   4 - 1P fire
-;   5 - 1P left
-;   6 - 1P right
+;   1 - 2P start (G on 8bitworkshop)
+;   2 - 1P start (return on 8bitworkshop)
+;   4 - 1P fire (space on 8bitworkshop)
+;   5 - 1P left (left on 8bitworkshop)
+;   6 - 1P right (right on 8bitworkshop)
 ;
 ; port 2 input
 ;   0,1 - DIP switches (number of ships from 3 to 6)
@@ -210,7 +210,39 @@ next_char:
 done_text:
 
 forever:
-	OUT	WATCHDOG	; Tickle watchdog
+	IN	1
+	RRC
+	RRC
+	MOV	B,A
+	SBC	A
+	STA	FRAME_BUFFER
+
+	MOV	A,B
+	RRC
+	MOV	B,A
+	SBC	A
+	STA	FRAME_BUFFER + 32
+
+	MOV	A,B
+	RRC
+	RRC
+	MOV	B,A
+	SBC	A
+	STA	FRAME_BUFFER + 64
+
+	MOV	A,B
+	RRC
+	MOV	B,A
+	SBC	A
+	STA	FRAME_BUFFER + 96
+
+	MOV	A,B
+	RRC
+	MOV	B,A
+	SBC	A
+	STA	FRAME_BUFFER + 128
+
+        OUT	WATCHDOG	; Tickle watchdog
 	JMP	forever		; Main loop
 
 ; ###########################
@@ -628,9 +660,9 @@ one_char:
 	MOV	A,C
 	CMA		; invert all bits = 255 - y
 	ANI	$F8	; clear the unnecessary bits
-	RAR
-	RAR
-	RAR
+	RRC
+	RRC
+	RRC
 	ADD	L
 	MOV	L,A
 
